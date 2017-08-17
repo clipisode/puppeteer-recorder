@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Record animations using puppeteer. Based on electron-recorder.",
   "main": "index.js",
+  "peerDependencies": {
+    "puppeteer": "0.9.x"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
