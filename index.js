@@ -1,24 +1,6 @@
 const { spawn } = require('child_process');
 const puppeteer = require('puppeteer');
 
-function ffmpegWork(page, ffmpegPath, args) {
-  return new Promise(function(resolve, reject) {
-    var ffmpeg = spawn(ffmpegPath, args);
-
-    ffmpeg.on('close', resolve;
-
-    page
-      .screenshot()
-      .then(buffer => {
-        ffmpeg.stdin.write(buffer, err => {
-          if (err) reject(err);
-          else ffmpeg.stdin.end();
-        });
-      })
-      .catch(reject);
-  });
-}
-
 module.exports.record = async function(options) {
   const browser = options.browser || (await puppeteer.launch());
   const page = options.page || (await browser.newPage());
@@ -31,7 +13,7 @@ module.exports.record = async function(options) {
     '-f',
     'image2pipe',
     '-r',
-    '' + +fps,
+    `${+fps}`,
     '-i',
     '-',
     '-c:v',
@@ -56,5 +38,33 @@ module.exports.record = async function(options) {
 
   await options.prepare(browser, page);
 
-  await ffmpegWork(page, ffmpegPath, args);
+  const ffmpeg = spawn(ffmpegPath, args);
+  const ffmpegClose = new Promise(resolve => ffmpeg.on('close', resolve));
+
+  ffmpeg.stdout.on('data', data => console.log(data.toString()));
+  ffmpeg.stderr.on('data', data => console.log(data.toString()));
+
+  for (let i = 1; i <= options.frames; i++) {
+    console.log(`Frame ${i}/${options.frames}.`);
+    let screenshot = await page.screenshot();
+
+    await write(ffmpeg.stdin, screenshot);
+  }
+
+  ffmpeg.stdin.end();
+
+  await ffmpegClose;
 };
+
+function timeout(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function write(stream, buffer) {
+  return new Promise((resolve, reject) => {
+    stream.write(buffer, error => {
+      if (error) reject(error);
+      else resolve();
+    });
+  });
+}
