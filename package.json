@@ -1,0 +1,25 @@
+{
+  "name": "puppeteer-recorder",
+  "version": "1.0.0",
+  "description": "Record animations using puppeteer. Based on electron-recorder.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clipisode/puppeteer-recorder.git"
+  },
+  "keywords": [
+    "puppeteer",
+    "ffmpeg",
+    "animation",
+    "recorder"
+  ],
+  "author": "Max Schmeling",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/clipisode/puppeteer-recorder/issues"
+  },
+  "homepage": "https://github.com/clipisode/puppeteer-recorder#readme"
+}
