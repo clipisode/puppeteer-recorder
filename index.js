@@ -20,6 +20,10 @@ module.exports.record = async function(options) {
   args.push(outFile || '-');
 
   const ffmpeg = spawn(ffmpegPath, args);
+
+  ffmpeg.stdout.pipe(process.stdout);
+  ffmpeg.stderr.pipe(process.stderr);
+
   const closed = new Promise(resolve => ffmpeg.on('close', resolve));
 
   for (let i = 1; i <= options.frames; i++) {
