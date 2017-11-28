@@ -29,7 +29,7 @@ module.exports.record = async function(options) {
   for (let i = 1; i <= options.frames; i++) {
     await options.render(browser, page, i);
 
-    let screenshot = await page.screenshot();
+    let screenshot = await page.screenshot({ omitBackground: true });
 
     await write(ffmpeg.stdin, screenshot);
   }
