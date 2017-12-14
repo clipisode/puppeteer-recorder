@@ -1,6 +1,6 @@
 {
   "name": "puppeteer-recorder",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Record animations using puppeteer. Based on electron-recorder.",
   "main": "index.js",
   "peerDependencies": {
