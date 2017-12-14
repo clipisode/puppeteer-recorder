@@ -32,6 +32,11 @@ module.exports.record = async function(options) {
   });
 
   for (let i = 1; i <= options.frames; i++) {
+    if (options.logEachFrame)
+      console.log(
+        `[puppeteer-recorder] rendering frame ${i} of ${options.frames}.`
+      );
+
     await options.render(browser, page, i);
 
     let screenshot = await page.screenshot({ omitBackground: true });
