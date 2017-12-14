@@ -21,8 +21,10 @@ module.exports.record = async function(options) {
 
   const ffmpeg = spawn(ffmpegPath, args);
 
-  // ffmpeg.stdout.pipe(process.stdout);
-  // ffmpeg.stderr.pipe(process.stderr);
+  if (options.pipeOutput) {
+    ffmpeg.stdout.pipe(process.stdout);
+    ffmpeg.stderr.pipe(process.stderr);
+  }
 
   const closed = new Promise((resolve, reject) => {
     ffmpeg.on('error', reject);
