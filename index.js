@@ -24,7 +24,10 @@ module.exports.record = async function(options) {
   // ffmpeg.stdout.pipe(process.stdout);
   // ffmpeg.stderr.pipe(process.stderr);
 
-  const closed = new Promise(resolve => ffmpeg.on('close', resolve));
+  const closed = new Promise((resolve, reject) => {
+    ffmpeg.on('error', reject);
+    ffmpeg.on('close', resolve);
+  });
 
   for (let i = 1; i <= options.frames; i++) {
     await options.render(browser, page, i);
