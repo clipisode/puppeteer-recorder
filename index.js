@@ -12,7 +12,7 @@ module.exports.record = async function(options) {
 
   var outFile = options.output;
 
-  const args = ffmpegArgs(fps, options.originalPath);
+  const args = ffmpegArgs(fps, options.originalPath, options.threadQueueSize);
 
   args.push(outFile || '-');
 
@@ -46,7 +46,7 @@ module.exports.record = async function(options) {
   await closed;
 };
 
-const ffmpegArgs = (fps, originalPath) => {
+const ffmpegArgs = (fps, originalPath, threadQueueSize) => {
   const audioInput = originalPath && ['-i', originalPath];
   const audioMap = originalPath && [
     '-map',
@@ -56,6 +56,10 @@ const ffmpegArgs = (fps, originalPath) => {
     '-c:a',
     'copy'
   ];
+  const threadQueueSizeOption = threadQueueSize && [
+    '-thread_queue_size',
+    threadQueueSize
+  ];
 
   return [
     '-y',
@@ -64,6 +68,7 @@ const ffmpegArgs = (fps, originalPath) => {
     'image2pipe',
     '-r',
     `${+fps}`,
+    ...threadQueueSizeOption,
     '-i',
     '-',
     '-pix_fmt',
