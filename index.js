@@ -12,10 +12,7 @@ module.exports.record = async function(options) {
 
   var outFile = options.output;
 
-  const args = ffmpegArgs(fps);
-
-  if ('format' in options) args.push('-f', options.format);
-  else if (!outFile) args.push('-f', 'matroska');
+  const args = ffmpegArgs(fps, options.originalPath);
 
   args.push(outFile || '-');
 
@@ -39,7 +36,7 @@ module.exports.record = async function(options) {
 
     await options.render(browser, page, i);
 
-    let screenshot = await page.screenshot({ omitBackground: true });
+    let screenshot = await page.screenshot();
 
     await write(ffmpeg.stdin, screenshot);
   }
@@ -49,23 +46,31 @@ module.exports.record = async function(options) {
   await closed;
 };
 
-const ffmpegArgs = fps => [
-  '-y',
-  '-f',
-  'image2pipe',
-  '-r',
-  `${+fps}`,
-  '-i',
-  '-',
-  '-c:v',
-  'libvpx',
-  '-auto-alt-ref',
-  '0',
-  '-pix_fmt',
-  'yuva420p',
-  '-metadata:s:v:0',
-  'alpha_mode="1"'
-];
+const ffmpegArgs = (fps, originalPath) => {
+  const audioInput = originalPath && ['-i', originalPath];
+  const audioMap = originalPath && [
+    '-map',
+    '1:v',
+    '-map',
+    '0:a',
+    '-c:a',
+    'copy'
+  ];
+
+  return [
+    '-y',
+    ...audioInput,
+    '-f',
+    'image2pipe',
+    '-r',
+    `${+fps}`,
+    '-i',
+    '-',
+    '-pix_fmt',
+    'yuva420p',
+    ...audioMap
+  ];
+};
 
 const write = (stream, buffer) =>
   new Promise((resolve, reject) => {
