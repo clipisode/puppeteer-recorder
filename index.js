@@ -72,8 +72,6 @@ const ffmpegArgs = (fps, originalPath, threadQueueSize, dir) => {
   return [
     '-y',
     ...audioInput,
-    '-f',
-    'image2pipe',
     '-r',
     `${+fps}`,
     ...threadQueueSizeOption,
