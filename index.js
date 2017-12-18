@@ -36,7 +36,7 @@ module.exports.record = async function(options) {
   }
   const pages = await Promise.all(pagePromises);
 
-  await Promise.all(pages.map(p => options.prepare(browser, p)));
+  await Promise.all(pages.map((p, i) => options.prepare(browsers[i], p)));
 
   // await options.prepare(browser, page);
 
