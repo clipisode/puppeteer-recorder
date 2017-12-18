@@ -31,7 +31,7 @@ module.exports.record = async function(options) {
     await options.render(browser, page, i);
 
     let screenshot = await page.screenshot({
-      path: path.join(dir, `img${('0000' + i).substr(-4, 4)}.png`)
+      path: path.join(options.dir, `img${('0000' + i).substr(-4, 4)}.png`)
     });
 
     // await write(ffmpeg.stdin, screenshot);
