@@ -28,7 +28,7 @@ module.exports.record = async function(options) {
     browserPromises.push(options.launchBrowser());
   }
   const browsers = await Promise.all(browserPromises);
-  const browser = options.browser || (await puppeteer.launch());
+  // const browser = options.browser || (await puppeteer.launch());
   // const page = options.page || (await browser.newPage());
   const pagePromises = [];
   for (let i = 0; i < (options.pageCount || 1); i++) {
@@ -79,6 +79,7 @@ module.exports.record = async function(options) {
   // ffmpeg.stdin.end();
 
   await closed;
+  await Promise.all(browsers.map(b => b.close()));
 };
 
 const ffmpegArgs = (fps, originalPath, threadQueueSize, dir) => {
