@@ -56,7 +56,7 @@ module.exports.record = async function(options) {
 
   await Promise.all(
     pages.map((page, pageIndex) =>
-      processWithPage(browser, page, pageIndex, pages.length, options)
+      processWithPage(browsers[i], page, pageIndex, pages.length, options)
     )
   );
 
