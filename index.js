@@ -1,5 +1,6 @@
 const { spawn } = require('child_process');
 const puppeteer = require('puppeteer');
+const path = require('path');
 
 module.exports.record = async function(options) {
   const browser = options.browser || (await puppeteer.launch());
@@ -12,9 +13,29 @@ module.exports.record = async function(options) {
 
   var outFile = options.output;
 
-  const args = ffmpegArgs(fps, options.originalPath, options.threadQueueSize);
+  const args = ffmpegArgs(
+    fps,
+    options.originalPath,
+    options.threadQueueSize,
+    options.dir
+  );
 
   args.push(outFile || '-');
+
+  for (let i = 1; i <= options.frames; i++) {
+    if (options.logEachFrame)
+      console.log(
+        `[puppeteer-recorder] rendering frame ${i} of ${options.frames}.`
+      );
+
+    await options.render(browser, page, i);
+
+    let screenshot = await page.screenshot({
+      path: path.join(dir, `img${('0000' + i).substr(-4, 4)}.png`)
+    });
+
+    // await write(ffmpeg.stdin, screenshot);
+  }
 
   const ffmpeg = spawn(ffmpegPath, args);
 
@@ -28,25 +49,12 @@ module.exports.record = async function(options) {
     ffmpeg.on('close', resolve);
   });
 
-  for (let i = 1; i <= options.frames; i++) {
-    if (options.logEachFrame)
-      console.log(
-        `[puppeteer-recorder] rendering frame ${i} of ${options.frames}.`
-      );
-
-    await options.render(browser, page, i);
-
-    let screenshot = await page.screenshot();
-
-    await write(ffmpeg.stdin, screenshot);
-  }
-
-  ffmpeg.stdin.end();
+  // ffmpeg.stdin.end();
 
   await closed;
 };
 
-const ffmpegArgs = (fps, originalPath, threadQueueSize) => {
+const ffmpegArgs = (fps, originalPath, threadQueueSize, dir) => {
   const audioInput = originalPath && ['-i', originalPath];
   const audioMap = originalPath && [
     '-map',
@@ -70,7 +78,7 @@ const ffmpegArgs = (fps, originalPath, threadQueueSize) => {
     `${+fps}`,
     ...threadQueueSizeOption,
     '-i',
-    '-',
+    path.join(dir, 'img%04d.png'),
     '-pix_fmt',
     'yuva420p',
     ...audioMap
