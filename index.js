@@ -7,7 +7,7 @@ const frameMessage = (frame, frames) =>
 
 async function processWithPage(browser, page, pageIndex, pageCount, options) {
   for (let i = 1; i <= options.frames; i += pageCount) {
-    if (i <= options.frames) return;
+    if (i > options.frames) return;
     if (options.logEachFrame) console.log(frameMessage(i, options.frames));
 
     await options.render(browser, page, i);
