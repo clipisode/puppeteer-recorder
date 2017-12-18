@@ -7,13 +7,17 @@ const frameMessage = (frame, frames) =>
 
 async function processWithPage(browser, page, pageIndex, pageCount, options) {
   for (let i = 1; i <= options.frames; i += pageCount) {
-    if (i > options.frames) return;
-    if (options.logEachFrame) console.log(frameMessage(i, options.frames));
+    if (i + pageIndex > options.frames) return;
+    if (options.logEachFrame)
+      console.log(frameMessage(i + pageIndex, options.frames));
 
-    await options.render(browser, page, i);
+    await options.render(browser, page, i + pageIndex);
 
     await page.screenshot({
-      path: path.join(options.dir, `img${('0000' + i).substr(-4, 4)}.png`)
+      path: path.join(
+        options.dir,
+        `img${('0000' + (i + pageIndex)).substr(-4, 4)}.png`
+      )
     });
   }
 }
