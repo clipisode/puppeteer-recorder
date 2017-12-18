@@ -2,11 +2,36 @@ const { spawn } = require('child_process');
 const puppeteer = require('puppeteer');
 const path = require('path');
 
+const frameMessage = (frame, frames) =>
+  `[puppeteer-recorder] rendering frame ${frame} of ${frames}.`;
+
+async function processWithPage(browser, page, pageIndex, pageCount, options) {
+  for (let i = 1; i <= options.frames; i += pageCount) {
+    if (i <= options.frames) return;
+    if (options.logEachFrame) console.log(frameMessage(i, options.frames));
+
+    await options.render(browser, page, i);
+
+    await page.screenshot({
+      path: path.join(options.dir, `img${('0000' + i).substr(-4, 4)}.png`)
+    });
+  }
+}
+
 module.exports.record = async function(options) {
   const browser = options.browser || (await puppeteer.launch());
-  const page = options.page || (await browser.newPage());
+  // const page = options.page || (await browser.newPage());
+  const pages = await Promise.all([
+    browser.newPage(),
+    browser.newPage(),
+    browser.newPage(),
+    browser.newPage(),
+    browser.newPage()
+  ]);
 
-  await options.prepare(browser, page);
+  await Promise.all(pages.map(p => options.prepare(browser, p)));
+
+  // await options.prepare(browser, page);
 
   var ffmpegPath = options.ffmpeg || 'ffmpeg';
   var fps = options.fps || 60;
@@ -22,20 +47,15 @@ module.exports.record = async function(options) {
 
   args.push(outFile || '-');
 
-  for (let i = 1; i <= options.frames; i++) {
-    if (options.logEachFrame)
-      console.log(
-        `[puppeteer-recorder] rendering frame ${i} of ${options.frames}.`
-      );
+  await Promise.all(
+    pages.map((page, pageIndex) =>
+      processWithPage(browser, page, pageIndex, pages.length, options)
+    )
+  );
 
-    await options.render(browser, page, i);
-
-    let screenshot = await page.screenshot({
-      path: path.join(options.dir, `img${('0000' + i).substr(-4, 4)}.png`)
-    });
-
-    // await write(ffmpeg.stdin, screenshot);
-  }
+  // for (let i = 1; i <= options.frames; i++) {
+  //   await write(ffmpeg.stdin, screenshot);
+  // }
 
   const ffmpeg = spawn(ffmpegPath, args);
 
