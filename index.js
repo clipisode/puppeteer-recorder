@@ -23,11 +23,16 @@ async function processWithPage(browser, page, pageIndex, pageCount, options) {
 }
 
 module.exports.record = async function(options) {
+  const browserPromises = [];
+  for (let i = 0; i < (options.pageCount || 1); i++) {
+    browserPromises.push(options.launchBrowser());
+  }
+  const browsers = await Promise.all(browserPromises);
   const browser = options.browser || (await puppeteer.launch());
   // const page = options.page || (await browser.newPage());
   const pagePromises = [];
   for (let i = 0; i < (options.pageCount || 1); i++) {
-    pagePromises.push(browser.newPage());
+    pagePromises.push(browsers[i].newPage());
   }
   const pages = await Promise.all(pagePromises);
 
