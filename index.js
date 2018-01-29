@@ -22,16 +22,18 @@ async function processWithPage(browser, page, pageIndex, pageCount, options) {
   }
 }
 
-module.exports.record = async function(options) {
-  const browserPromises = [];
-  for (let i = 0; i < (options.pageCount || 1); i++) {
-    browserPromises.push(options.launchBrowser());
-  }
-  const browsers = await Promise.all(browserPromises);
+module.exports.record = async function record(options) {
+  const pageCount = options.pageCount || 1;
+
+  // const browserPromises = [];
+  // for (let i = 0; i < pageCount; i++) {
+  //   browserPromises.push(options.launchBrowser());
+  // }
+  const browsers = options.browsers; // await Promise.all(browserPromises);
   // const browser = options.browser || (await puppeteer.launch());
   // const page = options.page || (await browser.newPage());
   const pagePromises = [];
-  for (let i = 0; i < (options.pageCount || 1); i++) {
+  for (let i = 0; i < pageCount; i++) {
     pagePromises.push(browsers[i].newPage());
   }
   const pages = await Promise.all(pagePromises);
@@ -66,10 +68,6 @@ module.exports.record = async function(options) {
     )
   );
 
-  // for (let i = 1; i <= options.frames; i++) {
-  //   await write(ffmpeg.stdin, screenshot);
-  // }
-
   const ffmpeg = spawn(ffmpegPath, args);
 
   if (options.pipeOutput) {
@@ -82,10 +80,8 @@ module.exports.record = async function(options) {
     ffmpeg.on('close', resolve);
   });
 
-  // ffmpeg.stdin.end();
-
   await closed;
-  await Promise.all(browsers.map(b => b.close()));
+  await Promise.all(pages.map(p => p.close()));
 };
 
 const ffmpegArgs = (fps, originalPath, threadQueueSize, dir) => {
