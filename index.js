@@ -13,25 +13,23 @@ async function processWithPage(browser, page, pageIndex, pageCount, options) {
 
     await options.render(browser, page, i + pageIndex);
 
-    await page.screenshot({
-      path: path.join(
-        options.dir,
-        `img${('0000' + (i + pageIndex)).substr(-4, 4)}.png`
-      )
-    });
+    const outputPath = path.join(
+      options.dir,
+      `img${('0000' + (i + pageIndex)).substr(-4, 4)}.png`
+    );
+
+    if (options.screenshot)
+      await options.screenshot(
+        async () => await page.screenshot({ path: outputPath })
+      );
+    else await page.screenshot({ path: outputPath });
   }
 }
 
 module.exports.record = async function record(options) {
   const pageCount = options.pageCount || 1;
 
-  // const browserPromises = [];
-  // for (let i = 0; i < pageCount; i++) {
-  //   browserPromises.push(options.launchBrowser());
-  // }
-  const browsers = options.browsers; // await Promise.all(browserPromises);
-  // const browser = options.browser || (await puppeteer.launch());
-  // const page = options.page || (await browser.newPage());
+  const browsers = options.browsers;
   const pagePromises = [];
   for (let i = 0; i < pageCount; i++) {
     pagePromises.push(browsers[i].newPage());
@@ -39,8 +37,6 @@ module.exports.record = async function record(options) {
   const pages = await Promise.all(pagePromises);
 
   await Promise.all(pages.map((p, i) => options.prepare(browsers[i], p)));
-
-  // await options.prepare(browser, page);
 
   var ffmpegPath = options.ffmpeg || 'ffmpeg';
   var fps = options.fps || 60;
@@ -112,11 +108,3 @@ const ffmpegArgs = (fps, originalPath, threadQueueSize, dir) => {
     ...audioMap
   ];
 };
-
-const write = (stream, buffer) =>
-  new Promise((resolve, reject) => {
-    stream.write(buffer, error => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
