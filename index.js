@@ -82,8 +82,7 @@ module.exports.record = async function record(options) {
         page,
         pageIndex,
         pages.length,
-        options,
-        queue
+        options
       )
     )
   );
