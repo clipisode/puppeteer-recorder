@@ -15,35 +15,33 @@ async function processWithPage(pagePool, frame, options) {
   // const writePromises = [];
   const page = await pagePool.acquire();
 
-    if (options.logEachFrame)
-      console.log(frameMessage(frame, options.frames));
+  if (options.logEachFrame) console.log(frameMessage(frame, options.frames));
 
-    await options.render(page, frame);
+  await options.render(page, frame);
 
-    const outputPath = path.join(
-      options.dir,
-      `img${('0000' + (i + pageIndex)).substr(-4, 4)}.png`
-    );
+  const outputPath = path.join(
+    options.dir,
+    `img${('0000' + (i + pageIndex)).substr(-4, 4)}.png`
+  );
 
-    if (options.screenshot)
-      await options.screenshot(async () => {
-        // const bfr = await page.screenshot({ path: outputPath });
-        await page.screenshot({ path: outputPath });
-        // writePromises.push(
-        //   queue.add(() => {
-        //     return new Promise((resolve, reject) => {
-        //       try {
-        //         fs.writeFileSync(outputPath, bfr);
-        //         resolve();
-        //       } catch (err) {
-        //         reject(err);
-        //       }
-        //     });
-        //   })
-        // );
-      });
-    else await page.screenshot({ path: outputPath });
-  }
+  if (options.screenshot)
+    await options.screenshot(async () => {
+      // const bfr = await page.screenshot({ path: outputPath });
+      await page.screenshot({ path: outputPath });
+      // writePromises.push(
+      //   queue.add(() => {
+      //     return new Promise((resolve, reject) => {
+      //       try {
+      //         fs.writeFileSync(outputPath, bfr);
+      //         resolve();
+      //       } catch (err) {
+      //         reject(err);
+      //       }
+      //     });
+      //   })
+      // );
+    });
+  else await page.screenshot({ path: outputPath });
 
   pagePool.release(page);
 
@@ -86,7 +84,7 @@ module.exports.record = async function record(options) {
   const prom = [];
 
   for (let i = 1; i <= options.frames; i++) {
-    prom.push(processWithPage(pagePool, i, options))  
+    prom.push(processWithPage(pagePool, i, options));
   }
 
   await Promise.all(prom);
