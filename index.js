@@ -36,14 +36,17 @@ module.exports.record = async function record(options) {
   const pagePool = genericPool.createPool(
     {
       create: async () => {
+        console.log('Acquiring browser...');
         const browser = await browserPool.acquire();
+        console.log('Browser acquired.');
         const page = await browser.newPage();
+        page.__browser = browser;
         await options.prepare(browser, page);
         return page;
       },
       destroy: async page => {
         await page.close();
-        await browserPool.release(browser);
+        browserPool.release(page.__browser);
       }
     },
     { max: pageCount }
