@@ -10,6 +10,7 @@ const frameMessage = (frame, frames) =>
 
 async function processWithPage(pagePool, frame, options) {
   const page = await pagePool.acquire();
+  const writePromise = null;
 
   if (options.logEachFrame) console.log(frameMessage(frame, options.frames));
 
@@ -22,11 +23,19 @@ async function processWithPage(pagePool, frame, options) {
 
   if (options.screenshot)
     await options.screenshot(async () => {
-      await page.screenshot({ path: outputPath });
+      const bfr = await page.screenshot();
+      writePromise = new Promise((resolve, reject) => {
+        fs.writeFile(outputPath, bfr, err => {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
     });
   else await page.screenshot({ path: outputPath });
 
   pagePool.release(page);
+
+  return writePromise;
 }
 
 module.exports.record = async function record(options) {
