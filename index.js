@@ -9,10 +9,6 @@ const frameMessage = (frame, frames) =>
   `[puppeteer-recorder] rendering frame ${frame} of ${frames}.`;
 
 async function processWithPage(pagePool, frame, options) {
-  // const maxConcurrent = 5;
-  // const maxQueue = Infinity;
-  // const queue = new Queue(maxConcurrent, maxQueue);
-  // const writePromises = [];
   const page = await pagePool.acquire();
 
   if (options.logEachFrame) console.log(frameMessage(frame, options.frames));
@@ -21,31 +17,16 @@ async function processWithPage(pagePool, frame, options) {
 
   const outputPath = path.join(
     options.dir,
-    `img${('0000' + (i + pageIndex)).substr(-4, 4)}.png`
+    `img${('0000' + frame).substr(-4, 4)}.png`
   );
 
   if (options.screenshot)
     await options.screenshot(async () => {
-      // const bfr = await page.screenshot({ path: outputPath });
       await page.screenshot({ path: outputPath });
-      // writePromises.push(
-      //   queue.add(() => {
-      //     return new Promise((resolve, reject) => {
-      //       try {
-      //         fs.writeFileSync(outputPath, bfr);
-      //         resolve();
-      //       } catch (err) {
-      //         reject(err);
-      //       }
-      //     });
-      //   })
-      // );
     });
   else await page.screenshot({ path: outputPath });
 
   pagePool.release(page);
-
-  // await Promise.all(writePromises);
 }
 
 module.exports.record = async function record(options) {
