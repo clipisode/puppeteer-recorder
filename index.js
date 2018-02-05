@@ -46,6 +46,7 @@ module.exports.record = async function record(options) {
       },
       destroy: async page => {
         await page.close();
+        console.log(`Releasing browser: ${!!page.__browser}`);
         browserPool.release(page.__browser);
       }
     },
@@ -73,6 +74,9 @@ module.exports.record = async function record(options) {
   }
 
   await Promise.all(prom);
+
+  await pagePool.drain();
+  await pagePool.clear();
 
   const drainPromise = pagePool.drain();
 
