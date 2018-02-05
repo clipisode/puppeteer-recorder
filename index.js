@@ -10,7 +10,7 @@ const frameMessage = (frame, frames) =>
 
 async function processWithPage(pagePool, frame, options) {
   const page = await pagePool.acquire();
-  const writePromise = null;
+  let writePromise = null;
 
   if (options.logEachFrame) console.log(frameMessage(frame, options.frames));
 
