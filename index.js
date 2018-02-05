@@ -45,7 +45,7 @@ async function processWithPage(pagePool, frame, options) {
     else await page.screenshot({ path: outputPath });
   }
 
-  await pagePool.releaes(page);
+  await pagePool.release(page);
 
   // await Promise.all(writePromises);
 }
