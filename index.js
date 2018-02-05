@@ -58,6 +58,7 @@ module.exports.record = async function record(options) {
         const browser = await browserPool.acquire();
         const page = await browser.newPage();
         await options.prepare(browser, page);
+        return page;
       },
       destroy: async page => {
         await page.close();
@@ -90,17 +91,6 @@ module.exports.record = async function record(options) {
   await Promise.all(prom);
 
   const drainPromise = pagePool.drain();
-
-  // await Promise.all(
-  //   pages.map((page, pageIndex) =>
-  //     processWithPage(
-  //       page,
-  //       pageIndex,
-  //       pages.length,
-  //       options
-  //     )
-  //   )
-  // );
 
   const ffmpeg = spawn(ffmpegPath, args);
 
