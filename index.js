@@ -84,9 +84,6 @@ module.exports.record = async function record(options) {
     prom.push(processWithPage(pagePool, i, options));
   }
 
-  await pagePool.drain();
-  await pagePool.clear();
-
   const ffmpeg = spawn(ffmpegPath, args);
 
   if (options.pipeOutput) {
@@ -105,10 +102,9 @@ module.exports.record = async function record(options) {
   }
   ffmpeg.stdin.end();
 
-  const drainPromise = pagePool.drain();
-
   await closed;
-  await drainPromise;
+  await pagePool.drain();
+  await pagePool.clear();
 };
 
 const ffmpegArgs = (fps, originalPath, threadQueueSize, type) => {
