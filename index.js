@@ -10,40 +10,40 @@ const frameMessage = (frame, frames) =>
 
 async function processWithPage(pagePool, frame, options) {
   const page = await pagePool.acquire();
-  let writePromise = null;
+  // let writePromise = null;
+  let bfr = null;
 
   if (options.logEachFrame) console.log(frameMessage(frame, options.frames));
 
   await options.render(page, frame);
 
-  const outputPath = path.join(
-    options.dir,
-    `img${('0000' + frame).substr(-4, 4)}.${options.type || 'png'}`
-  );
+  // const outputPath = path.join(
+  //   options.dir,
+  //   `img${('0000' + frame).substr(-4, 4)}.${options.type || 'png'}`
+  // );
 
   if (options.screenshot)
     await options.screenshot(async () => {
-      const bfr = await page.screenshot({
+      bfr = await page.screenshot({
         type: options.type || 'png',
         quality: options.quality
       });
-      writePromise = new Promise((resolve, reject) => {
-        fs.writeFile(outputPath, bfr, err => {
-          if (err) return reject(err);
-          resolve();
-        });
-      });
+      // writePromise = new Promise((resolve, reject) => {
+      //   fs.writeFile(outputPath, bfr, err => {
+      //     if (err) return reject(err);
+      //     resolve();
+      //   });
+      // });
     });
   else
-    await page.screenshot({
-      path: outputPath,
+    bfr = await page.screenshot({
       type: options.type || 'png',
       quality: options.quality
     });
 
   pagePool.release(page);
 
-  return writePromise;
+  return bfr;
 }
 
 module.exports.record = async function record(options) {
@@ -79,7 +79,6 @@ module.exports.record = async function record(options) {
     fps,
     options.originalPath,
     options.threadQueueSize,
-    options.dir,
     options.type || 'png'
   );
 
@@ -91,14 +90,18 @@ module.exports.record = async function record(options) {
     prom.push(processWithPage(pagePool, i, options));
   }
 
-  await Promise.all(prom);
-
   await pagePool.drain();
   await pagePool.clear();
 
   const drainPromise = pagePool.drain();
 
   const ffmpeg = spawn(ffmpegPath, args);
+
+  for (let i = 1; i <= options.frames; i++) {
+    let bfr = await prom[i];
+    await write(ffmpeg.stdin, bfr);
+  }
+  ffmpeg.stdin.end();
 
   if (options.pipeOutput) {
     ffmpeg.stdout.pipe(process.stdout);
@@ -114,7 +117,7 @@ module.exports.record = async function record(options) {
   await drainPromise;
 };
 
-const ffmpegArgs = (fps, originalPath, threadQueueSize, dir, type) => {
+const ffmpegArgs = (fps, originalPath, threadQueueSize, type) => {
   const audioInput = originalPath && ['-i', originalPath];
   const audioMap = originalPath && [
     '-map',
@@ -136,9 +139,17 @@ const ffmpegArgs = (fps, originalPath, threadQueueSize, dir, type) => {
     `${+fps}`,
     ...threadQueueSizeOption,
     '-i',
-    path.join(dir, `img%04d.${type}`),
+    '-',
     '-pix_fmt',
     'yuva420p',
     ...audioMap
   ];
 };
+
+const write = (stream, buffer) =>
+  new Promise((resolve, reject) => {
+    stream.write(buffer, error => {
+      if (error) reject(error);
+      else resolve();
+    });
+  });
