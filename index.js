@@ -28,13 +28,6 @@ async function processWithPage(pagePool, frame, options) {
         type: options.type || 'png',
         quality: options.quality
       });
-      // writePromise = new Promise((resolve, reject) => {
-      //   fs.writeFile(outputPath, bfr, err => {
-      //     if (err) return reject(err);
-      //     resolve();
-      //   });
-      // });
-      return bfr;
     });
   else
     bfr = await page.screenshot({
@@ -94,15 +87,7 @@ module.exports.record = async function record(options) {
   await pagePool.drain();
   await pagePool.clear();
 
-  const drainPromise = pagePool.drain();
-
   const ffmpeg = spawn(ffmpegPath, args);
-
-  for (let i = 1; i <= options.frames; i++) {
-    let bfr = await prom[i];
-    await write(ffmpeg.stdin, bfr);
-  }
-  ffmpeg.stdin.end();
 
   if (options.pipeOutput) {
     ffmpeg.stdout.pipe(process.stdout);
@@ -113,6 +98,14 @@ module.exports.record = async function record(options) {
     ffmpeg.on('error', reject);
     ffmpeg.on('close', resolve);
   });
+
+  for (let i = 1; i <= options.frames; i++) {
+    let bfr = await prom[i];
+    await write(ffmpeg.stdin, bfr);
+  }
+  ffmpeg.stdin.end();
+
+  const drainPromise = pagePool.drain();
 
   await closed;
   await drainPromise;
