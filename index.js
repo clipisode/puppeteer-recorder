@@ -34,6 +34,7 @@ async function processWithPage(pagePool, frame, options) {
       //     resolve();
       //   });
       // });
+      return bfr;
     });
   else
     bfr = await page.screenshot({
