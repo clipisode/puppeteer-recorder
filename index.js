@@ -77,8 +77,8 @@ module.exports.record = async function record(options) {
   ffmpeg.stdin.end();
 
   await closed;
-  await pagePool.drain();
-  await pagePool.clear();
+  // await pagePool.drain();
+  // await pagePool.clear();
 };
 
 const ffmpegArgs = (fps, originalPath, threadQueueSize, type) => {
