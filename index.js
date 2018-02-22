@@ -82,7 +82,8 @@ module.exports.record = async function record(options) {
 
   for (let i = 1; i <= options.frames; i++) {
     let bfr = await prom[i];
-    await write(ffmpeg.stdin, bfr);
+    if (bfr) await write(ffmpeg.stdin, bfr);
+    else console.log(`No bfr value for frame ${i}.`);
   }
   ffmpeg.stdin.end();
 
