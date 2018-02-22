@@ -10,30 +10,17 @@ const frameMessage = (frame, frames) =>
 
 async function processWithPage(pagePool, frame, options) {
   const page = await pagePool.acquire();
-  // let writePromise = null;
-  let bfr = null;
-
-  if (options.logEachFrame) console.log(frameMessage(frame, options.frames));
 
   await options.render(page, frame);
 
-  // const outputPath = path.join(
-  //   options.dir,
-  //   `img${('0000' + frame).substr(-4, 4)}.${options.type || 'png'}`
-  // );
+  let bfr = null;
 
-  if (options.screenshot)
-    await options.screenshot(async () => {
-      bfr = await page.screenshot({
-        type: options.type || 'png',
-        quality: options.quality
-      });
-    });
-  else
+  await options.screenshot(async () => {
     bfr = await page.screenshot({
       type: options.type || 'png',
       quality: options.quality
     });
+  });
 
   pagePool.release(page);
 
