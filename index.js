@@ -5,23 +5,23 @@ const Queue = require('promise-queue');
 const fs = require('fs');
 const genericPool = require('generic-pool');
 
-async function processWithPage(pagePool, frame, options) {
-  const page = await pagePool.acquire();
+async function processWithPage(page, frame, options) {
+  // const page = await pagePool.acquire();
 
   const renderResult = await options.render(page, frame);
 
-  if (renderResult === false) return null;
-
   let bfr = null;
 
-  await options.screenshot(async () => {
-    bfr = await page.screenshot({
-      type: options.type || 'png',
-      quality: options.quality
+  if (renderResult !== false) {
+    await options.screenshot(async () => {
+      bfr = await page.screenshot({
+        type: options.type || 'png',
+        quality: options.quality
+      });
     });
-  });
+  }
 
-  pagePool.release(page);
+  // pagePool.release(page);
 
   return bfr;
 }
@@ -29,26 +29,10 @@ async function processWithPage(pagePool, frame, options) {
 module.exports.record = async function record(options) {
   const pageCount = options.pageCount || 1;
 
-  const { browserPool } = options;
-  const pagePool = genericPool.createPool(
-    {
-      create: async () => {
-        console.log('Acquiring browser...');
-        const browser = await browserPool.acquire();
-        console.log('Browser acquired.');
-        const page = await browser.newPage();
-        page.__browser = browser;
-        await options.prepare(browser, page);
-        return page;
-      },
-      destroy: async page => {
-        await page.close();
-        console.log(`Releasing browser: ${!!page.__browser}`);
-        browserPool.release(page.__browser);
-      }
-    },
-    { max: pageCount }
-  );
+  const { browser } = options;
+  const page = await browser.newPage();
+
+  await options.prepare(browser, page);
 
   var ffmpegPath = options.ffmpeg || 'ffmpeg';
   var fps = options.fps || 60;
@@ -63,12 +47,6 @@ module.exports.record = async function record(options) {
   );
 
   args.push(outFile || '-');
-
-  const prom = [];
-
-  for (let i = 1; i <= options.frames; i++) {
-    prom.push(processWithPage(pagePool, i, options));
-  }
 
   const ffmpeg = spawn(ffmpegPath, args);
 
@@ -85,15 +63,17 @@ module.exports.record = async function record(options) {
   let mostRecentBuffer = null;
 
   for (let i = 1; i <= options.frames; i++) {
-    let bfr = await prom[i];
-    if (bfr) {
-      await write(ffmpeg.stdin, bfr);
-      mostRecentBuffer = bfr;
-    } else {
+    let screenshotBuffer = await processWithPage(page, i, options);
+
+    if (screenshotBuffer) {
+      await write(ffmpeg.stdin, screenshotBuffer);
+      mostRecentBuffer = screenshotBuffer;
+    } else if (mostRecentBuffer) {
       console.log(`No bfr value for frame ${i}. Reusing most recent.`);
       await write(ffmpeg.stdin, mostRecentBuffer);
     }
   }
+
   ffmpeg.stdin.end();
 
   await closed;
