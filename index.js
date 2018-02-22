@@ -8,7 +8,9 @@ const genericPool = require('generic-pool');
 async function processWithPage(pagePool, frame, options) {
   const page = await pagePool.acquire();
 
-  await options.render(page, frame);
+  const renderResult = await options.render(page, frame);
+
+  if (renderResult === false) return null;
 
   let bfr = null;
 
@@ -80,10 +82,17 @@ module.exports.record = async function record(options) {
     ffmpeg.on('close', resolve);
   });
 
+  let mostRecentBuffer = null;
+
   for (let i = 1; i <= options.frames; i++) {
     let bfr = await prom[i];
-    if (bfr) await write(ffmpeg.stdin, bfr);
-    else console.log(`No bfr value for frame ${i}.`);
+    if (bfr) {
+      await write(ffmpeg.stdin, bfr);
+      mostRecentBuffer = bfr;
+    } else {
+      console.log(`No bfr value for frame ${i}. Reusing most recent.`);
+      await write(ffmpeg.stdin, mostRecentBuffer);
+    }
   }
   ffmpeg.stdin.end();
 
