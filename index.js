@@ -5,9 +5,6 @@ const Queue = require('promise-queue');
 const fs = require('fs');
 const genericPool = require('generic-pool');
 
-const frameMessage = (frame, frames) =>
-  `[puppeteer-recorder] rendering frame ${frame} of ${frames}.`;
-
 async function processWithPage(pagePool, frame, options) {
   const page = await pagePool.acquire();
 
