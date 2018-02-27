@@ -1,9 +1,7 @@
 const { spawn } = require('child_process');
 const puppeteer = require('puppeteer');
 const path = require('path');
-const Queue = require('promise-queue');
 const fs = require('fs');
-const genericPool = require('generic-pool');
 
 async function processWithPage(page, frame, options) {
   // const page = await pagePool.acquire();
@@ -15,6 +13,7 @@ async function processWithPage(page, frame, options) {
   if (renderResult !== false) {
     await options.screenshot(async () => {
       bfr = await page.screenshot({
+        omitBackground: true,
         type: options.type || 'png',
         quality: options.quality
       });
@@ -47,6 +46,11 @@ module.exports.record = async function record(options) {
 
   const ffmpeg = spawn(ffmpegPath, args);
 
+  if (options.pipeOutput) {
+    ffmpeg.stdout.pipe(process.stdout);
+    ffmpeg.stderr.pipe(process.stderr);
+  }
+
   const closed = new Promise((resolve, reject) => {
     ffmpeg.on('error', reject);
     ffmpeg.on('close', resolve);
@@ -75,14 +79,7 @@ module.exports.record = async function record(options) {
 
 const ffmpegArgs = (fps, originalPath, threadQueueSize, type, output) => {
   const audioInput = originalPath && ['-i', originalPath];
-  const audioMap = originalPath && [
-    '-map',
-    '1:v',
-    '-map',
-    '0:a',
-    '-c:a',
-    'copy'
-  ];
+  const audioMap = originalPath && ['-map', '0:a', '-c:a', 'copy'];
   const threadQueueSizeOption = threadQueueSize && [
     '-thread_queue_size',
     threadQueueSize
@@ -96,6 +93,8 @@ const ffmpegArgs = (fps, originalPath, threadQueueSize, type, output) => {
     ...threadQueueSizeOption,
     '-i',
     '-',
+    '-filter_complex',
+    'overlay',
     '-pix_fmt',
     'yuva420p',
     ...audioMap,
