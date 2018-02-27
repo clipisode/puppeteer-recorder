@@ -37,23 +37,15 @@ module.exports.record = async function record(options) {
   var ffmpegPath = options.ffmpeg || 'ffmpeg';
   var fps = options.fps || 60;
 
-  var outFile = options.output;
-
   const args = ffmpegArgs(
     fps,
     options.originalPath,
     options.threadQueueSize,
-    options.type || 'png'
+    options.type || 'png',
+    options.output || '-'
   );
 
-  args.push(outFile || '-');
-
   const ffmpeg = spawn(ffmpegPath, args);
-
-  if (options.pipeOutput) {
-    ffmpeg.stdout.pipe(process.stdout);
-    ffmpeg.stderr.pipe(process.stderr);
-  }
 
   const closed = new Promise((resolve, reject) => {
     ffmpeg.on('error', reject);
@@ -81,7 +73,7 @@ module.exports.record = async function record(options) {
   // await pagePool.clear();
 };
 
-const ffmpegArgs = (fps, originalPath, threadQueueSize, type) => {
+const ffmpegArgs = (fps, originalPath, threadQueueSize, type, output) => {
   const audioInput = originalPath && ['-i', originalPath];
   const audioMap = originalPath && [
     '-map',
@@ -106,7 +98,8 @@ const ffmpegArgs = (fps, originalPath, threadQueueSize, type) => {
     '-',
     '-pix_fmt',
     'yuva420p',
-    ...audioMap
+    ...audioMap,
+    output
   ];
 };
 
