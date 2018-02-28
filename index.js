@@ -91,7 +91,7 @@ const ffmpegArgs = (fps, originalPath, threadQueueSize, type, output) => {
     '-i',
     '-',
     '-filter_complex',
-    'overlay',
+    '[0:0] setsar=1/1[sarfix];[sarfix]overlay',
     '-pix_fmt',
     'yuva420p',
     ...audioMap,
