@@ -10,22 +10,28 @@ async function processWithPage(page, frame, options) {
 
   let bfr = null;
 
-  if (renderResult !== false) {
-    await options.screenshot(async () => {
-      bfr = await page.screenshot({
-        omitBackground: true,
-        type: options.type || 'png',
-        quality: options.quality
-      });
+  await options.screenshot(async () => {
+    bfr = await page.screenshot({
+      omitBackground: true,
+      type: options.type || 'png',
+      quality: options.quality
     });
-  }
+  });
 
   // pagePool.release(page);
 
   return bfr;
 }
 
+const isRepeat = (repeats, frame) => {
+  console.log(JSON.stringify(repeats));
+  return repeats.some(r => frame > r[0] && frame <= r[1]);
+};
+const isEndOfRepeat = (repeats, frame) => repeats.some(r => r[1] === frame);
+
 module.exports.record = async function record(options) {
+  options.repeats = options.repeats || [];
+
   const pageCount = options.pageCount || 1;
 
   const { browser } = options;
@@ -59,12 +65,12 @@ module.exports.record = async function record(options) {
   let mostRecentBuffer = null;
 
   for (let i = 1; i <= options.frames; i++) {
-    let screenshotBuffer = await processWithPage(page, i, options);
+    if (mostRecentBuffer && isRepeat(options.repeats, i)) {
+      // do nothing
+    } else mostRecentBuffer = await processWithPage(page, i, options);
 
-    if (screenshotBuffer) {
-      await write(ffmpeg.stdin, screenshotBuffer);
-      mostRecentBuffer = screenshotBuffer;
-    } else if (mostRecentBuffer) await write(ffmpeg.stdin, mostRecentBuffer);
+    await write(ffmpeg.stdin, mostRecentBuffer);
+    if (isEndOfRepeat(options.repeats, i)) mostRecentBuffer = null;
   }
 
   ffmpeg.stdin.end();

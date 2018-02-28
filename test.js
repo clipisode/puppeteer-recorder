@@ -15,6 +15,7 @@ function pageRender(_frame) {
     render: async (page, frame) => await page.evaluate(pageRender, frame),
     fps: 30,
     frames: 150,
+    repeats: [[10, 140]],
     originalPath: '/Users/max/Documents/sample.mp4',
     threadQueueSize: 512,
     type: 'png',
