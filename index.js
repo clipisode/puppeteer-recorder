@@ -23,10 +23,8 @@ async function processWithPage(page, frame, options) {
   return bfr;
 }
 
-const isRepeat = (repeats, frame) => {
-  console.log(JSON.stringify(repeats));
-  return repeats.some(r => frame > r[0] && frame <= r[1]);
-};
+const isRepeat = (repeats, frame) =>
+  repeats.some(r => frame > r[0] && frame <= r[1]);
 const isEndOfRepeat = (repeats, frame) => repeats.some(r => r[1] === frame);
 
 module.exports.record = async function record(options) {
