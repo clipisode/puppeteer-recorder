@@ -64,10 +64,7 @@ module.exports.record = async function record(options) {
     if (screenshotBuffer) {
       await write(ffmpeg.stdin, screenshotBuffer);
       mostRecentBuffer = screenshotBuffer;
-    } else if (mostRecentBuffer) {
-      console.log(`No bfr value for frame ${i}. Reusing most recent.`);
-      await write(ffmpeg.stdin, mostRecentBuffer);
-    }
+    } else if (mostRecentBuffer) await write(ffmpeg.stdin, mostRecentBuffer);
   }
 
   ffmpeg.stdin.end();
