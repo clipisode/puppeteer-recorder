@@ -72,13 +72,11 @@ class PuppeteerRecorder extends EventEmitter {
 module.exports = PuppeteerRecorder;
 
 async function processWithPage(page, frame, options, emitter) {
-  const renderResult = await options.render(page, frame);
-
-  let bfr = null;
+  await options.render(page, frame);
 
   const start = process.hrtime();
 
-  bfr = await page.screenshot({
+  const screenshotBuffer = await page.screenshot({
     omitBackground: true,
     type: options.type || "png",
     quality: options.quality
@@ -86,7 +84,7 @@ async function processWithPage(page, frame, options, emitter) {
 
   emitter.emit("screenshot", process.hrtime(start));
 
-  return bfr;
+  return screenshotBuffer;
 }
 
 const isRepeat = (repeats, frame) =>
