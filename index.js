@@ -2,55 +2,35 @@ const { spawn } = require("child_process");
 const puppeteer = require("puppeteer");
 const path = require("path");
 const fs = require("fs");
+const EventEmitter = require("events");
 
-async function processWithPage(page, frame, options) {
-  // const page = await pagePool.acquire();
+async function record() {
+  this.emit("recording");
 
-  const renderResult = await options.render(page, frame);
+  this.options.repeats = this.options.repeats || [];
 
-  let bfr = null;
+  const pageCount = this.options.pageCount || 1;
 
-  await options.screenshot(async () => {
-    bfr = await page.screenshot({
-      omitBackground: true,
-      type: options.type || "png",
-      quality: options.quality
-    });
-  });
-
-  // pagePool.release(page);
-
-  return bfr;
-}
-
-const isRepeat = (repeats, frame) =>
-  repeats.some(r => frame > r[0] && frame <= r[1]);
-const isEndOfRepeat = (repeats, frame) => repeats.some(r => r[1] === frame);
-
-module.exports.record = async function record(options) {
-  options.repeats = options.repeats || [];
-
-  const pageCount = options.pageCount || 1;
-
-  const { browser } = options;
+  const { browser } = this.options;
   const page = await browser.newPage();
 
-  await options.prepare(browser, page);
+  await this.options.prepare(browser, page);
 
-  var ffmpegPath = options.ffmpeg || "ffmpeg";
-  var fps = options.fps || 60;
+  var ffmpegPath = this.options.ffmpeg || "ffmpeg";
+  var fps = this.options.fps || 60;
 
-  const args = ffmpegArgs(
-    fps,
-    options.originalPath,
-    options.threadQueueSize,
-    options.type || "png",
-    options.output || "-"
-  );
+  const {
+    originalPath,
+    threadQueueSize,
+    type = "png",
+    output = "-"
+  } = this.options;
+
+  const args = ffmpegArgs(fps, originalPath, threadQueueSize, type, output);
 
   const ffmpeg = spawn(ffmpegPath, args);
 
-  if (options.pipeOutput) {
+  if (this.options.pipeOutput) {
     ffmpeg.stdout.pipe(process.stdout);
     ffmpeg.stderr.pipe(process.stderr);
   }
@@ -62,21 +42,56 @@ module.exports.record = async function record(options) {
 
   let mostRecentBuffer = null;
 
-  for (let i = 1; i <= options.frames; i++) {
-    if (mostRecentBuffer && isRepeat(options.repeats, i)) {
+  for (let i = 1; i <= this.options.frames; i++) {
+    if (mostRecentBuffer && isRepeat(this.options.repeats, i)) {
       // do nothing
-    } else mostRecentBuffer = await processWithPage(page, i, options);
+    } else
+      mostRecentBuffer = await processWithPage(page, i, this.options, this);
 
     await write(ffmpeg.stdin, mostRecentBuffer);
-    if (isEndOfRepeat(options.repeats, i)) mostRecentBuffer = null;
+    if (isEndOfRepeat(this.options.repeats, i)) mostRecentBuffer = null;
   }
 
   ffmpeg.stdin.end();
 
   await closed;
-  // await pagePool.drain();
-  // await pagePool.clear();
-};
+
+  this.emit("finished");
+}
+
+class PuppeteerRecorder extends EventEmitter {
+  constructor(options) {
+    super();
+
+    this.options = options;
+
+    this.record = record.bind(this);
+  }
+}
+
+module.exports = PuppeteerRecorder;
+
+async function processWithPage(page, frame, options, emitter) {
+  const renderResult = await options.render(page, frame);
+
+  let bfr = null;
+
+  const start = process.hrtime();
+
+  bfr = await page.screenshot({
+    omitBackground: true,
+    type: options.type || "png",
+    quality: options.quality
+  });
+
+  emitter.emit("screenshot", process.hrtime(start));
+
+  return bfr;
+}
+
+const isRepeat = (repeats, frame) =>
+  repeats.some(r => frame > r[0] && frame <= r[1]);
+const isEndOfRepeat = (repeats, frame) => repeats.some(r => r[1] === frame);
 
 const ffmpegArgs = (fps, originalPath, threadQueueSize, type, output) => {
   const audioInput = originalPath && ["-i", originalPath];
