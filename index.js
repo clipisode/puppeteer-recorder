@@ -82,9 +82,14 @@ async function processWithPage(page, frame, options, emitter) {
     quality: options.quality
   });
 
-  emitter.emit("screenshot", process.hrtime(start));
+  emitter.emit("screenshot", hrtimeToMilliseconds(process.hrtime(start)));
 
   return screenshotBuffer;
+}
+
+function hrtimeToMilliseconds(hrtime) {
+  const nanoseconds = hrtime[0] * 1e9 + hrtime[1];
+  return nanoseconds / 1e6;
 }
 
 const isRepeat = (repeats, frame) =>
