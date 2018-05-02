@@ -24,5 +24,8 @@
   "bugs": {
     "url": "https://github.com/clipisode/puppeteer-recorder/issues"
   },
-  "homepage": "https://github.com/clipisode/puppeteer-recorder#readme"
+  "homepage": "https://github.com/clipisode/puppeteer-recorder#readme",
+  "devDependencies": {
+    "prettier": "^1.12.1"
+  }
 }

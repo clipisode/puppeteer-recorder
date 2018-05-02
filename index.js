@@ -1,7 +1,7 @@
-const { spawn } = require('child_process');
-const puppeteer = require('puppeteer');
-const path = require('path');
-const fs = require('fs');
+const { spawn } = require("child_process");
+const puppeteer = require("puppeteer");
+const path = require("path");
+const fs = require("fs");
 
 async function processWithPage(page, frame, options) {
   // const page = await pagePool.acquire();
@@ -13,7 +13,7 @@ async function processWithPage(page, frame, options) {
   await options.screenshot(async () => {
     bfr = await page.screenshot({
       omitBackground: true,
-      type: options.type || 'png',
+      type: options.type || "png",
       quality: options.quality
     });
   });
@@ -37,15 +37,15 @@ module.exports.record = async function record(options) {
 
   await options.prepare(browser, page);
 
-  var ffmpegPath = options.ffmpeg || 'ffmpeg';
+  var ffmpegPath = options.ffmpeg || "ffmpeg";
   var fps = options.fps || 60;
 
   const args = ffmpegArgs(
     fps,
     options.originalPath,
     options.threadQueueSize,
-    options.type || 'png',
-    options.output || '-'
+    options.type || "png",
+    options.output || "-"
   );
 
   const ffmpeg = spawn(ffmpegPath, args);
@@ -56,8 +56,8 @@ module.exports.record = async function record(options) {
   }
 
   const closed = new Promise((resolve, reject) => {
-    ffmpeg.on('error', reject);
-    ffmpeg.on('close', resolve);
+    ffmpeg.on("error", reject);
+    ffmpeg.on("close", resolve);
   });
 
   let mostRecentBuffer = null;
@@ -79,25 +79,25 @@ module.exports.record = async function record(options) {
 };
 
 const ffmpegArgs = (fps, originalPath, threadQueueSize, type, output) => {
-  const audioInput = originalPath && ['-i', originalPath];
-  const audioMap = originalPath && ['-map', '0:a', '-c:a', 'copy'];
+  const audioInput = originalPath && ["-i", originalPath];
+  const audioMap = originalPath && ["-map", "0:a", "-c:a", "copy"];
   const threadQueueSizeOption = threadQueueSize && [
-    '-thread_queue_size',
+    "-thread_queue_size",
     threadQueueSize
   ];
 
   return [
-    '-y',
+    "-y",
     ...audioInput,
-    '-r',
+    "-r",
     `${+fps}`,
     ...threadQueueSizeOption,
-    '-i',
-    '-',
-    '-filter_complex',
-    '[0:0] setsar=1/1[sarfix];[sarfix]overlay',
-    '-pix_fmt',
-    'yuva420p',
+    "-i",
+    "-",
+    "-filter_complex",
+    "[0:0] setsar=1/1[sarfix];[sarfix]overlay",
+    "-pix_fmt",
+    "yuva420p",
     ...audioMap,
     output
   ];
