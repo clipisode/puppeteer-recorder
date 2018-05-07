@@ -4,33 +4,28 @@ const path = require("path");
 const fs = require("fs");
 const EventEmitter = require("events");
 
-async function record() {
+async function record(options) {
   this.emit("recording");
 
-  this.options.repeats = this.options.repeats || [];
+  options.repeats = options.repeats || [];
 
-  const pageCount = this.options.pageCount || 1;
+  const pageCount = options.pageCount || 1;
 
-  const { browser } = this.options;
+  const { browser } = options;
   const page = await browser.newPage();
 
-  await this.options.prepare(browser, page);
+  await options.prepare(browser, page);
 
-  var ffmpegPath = this.options.ffmpeg || "ffmpeg";
-  var fps = this.options.fps || 60;
+  var ffmpegPath = options.ffmpeg || "ffmpeg";
+  var fps = options.fps || 60;
 
-  const {
-    originalPath,
-    threadQueueSize,
-    type = "png",
-    output = "-"
-  } = this.options;
+  const { originalPath, threadQueueSize, type = "png", output = "-" } = options;
 
   const args = ffmpegArgs(fps, originalPath, threadQueueSize, type, output);
 
   const ffmpeg = spawn(ffmpegPath, args);
 
-  if (this.options.pipeOutput) {
+  if (options.pipeOutput) {
     ffmpeg.stdout.pipe(process.stdout);
     ffmpeg.stderr.pipe(process.stderr);
   }
@@ -42,14 +37,13 @@ async function record() {
 
   let mostRecentBuffer = null;
 
-  for (let i = 1; i <= this.options.frames; i++) {
-    if (mostRecentBuffer && isRepeat(this.options.repeats, i)) {
+  for (let i = 1; i <= options.frames; i++) {
+    if (mostRecentBuffer && isRepeat(options.repeats, i)) {
       // do nothing
-    } else
-      mostRecentBuffer = await processWithPage(page, i, this.options, this);
+    } else mostRecentBuffer = await processWithPage(page, i, options, this);
 
     await write(ffmpeg.stdin, mostRecentBuffer);
-    if (isEndOfRepeat(this.options.repeats, i)) mostRecentBuffer = null;
+    if (isEndOfRepeat(options.repeats, i)) mostRecentBuffer = null;
   }
 
   ffmpeg.stdin.end();
@@ -63,9 +57,7 @@ class PuppeteerRecorder extends EventEmitter {
   constructor(options) {
     super();
 
-    this.options = options;
-
-    this.record = record.bind(this);
+    this.record = record.bind(this, options);
   }
 }
 
