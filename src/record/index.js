@@ -4,6 +4,7 @@ const isEndOfRepeat = require("./isEndOfRepeat");
 const isRepeat = require("./isRepeat");
 const processWithPage = require("./processWithPage");
 const write = require("./write");
+const childProcessToPromise = require("../util/childProcessToPromsie");
 
 module.exports = async function record(options) {
   this.emit("recording");
@@ -31,17 +32,13 @@ module.exports = async function record(options) {
     ffmpeg.stderr.pipe(process.stderr);
   }
 
-  const closed = new Promise((resolve, reject) => {
-    ffmpeg.on("error", reject);
-    ffmpeg.on("close", resolve);
-  });
+  const closed = childProcessToPromise(ffmpeg);
 
   let mostRecentBuffer = null;
 
   for (let i = 1; i <= options.frames; i++) {
-    if (mostRecentBuffer && isRepeat(options.repeats, i)) {
-      // do nothing
-    } else mostRecentBuffer = await processWithPage(page, i, options, this);
+    if (!mostRecentBuffer || !isRepeat(options.repeats, i))
+      mostRecentBuffer = await processWithPage(page, i, options, this);
 
     await write(ffmpeg.stdin, mostRecentBuffer);
     if (isEndOfRepeat(options.repeats, i)) mostRecentBuffer = null;
