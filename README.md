@@ -1,8 +1,8 @@
 # puppeteer-recorder
-Record animations using puppeteer. Based on electron-recorder.
+Record frame-by-frame animations using puppeteer. Based on electron-recorder.
 
 # Usage
-```
+```javascript
 const { record } = require('puppeteer-recorder');
 
 await record({
