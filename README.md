@@ -12,6 +12,8 @@ await record({
   fps: 60,
   frames: 60 * 5, // 5 seconds at 60 fps
   prepare: function (browser, page) { /* executed before first capture */ },
-  render: function (browser, page, frame) { /* executed before each capture */ }
+  render: function (browser, page, frame) { /* executed before each capture */ },
+  onFinish: function (outputPath){  },
+  onError: function (error){ },
 });
 ```
