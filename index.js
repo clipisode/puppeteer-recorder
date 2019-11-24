@@ -46,7 +46,9 @@ module.exports.record = async function(options) {
 
   ffmpeg.stdin.end();
 
-  await closed;
+	return closed
+		.then(() => options.onFinish(options.output))
+		.catch(options.onError);
 };
 
 const ffmpegArgs = fps => [
